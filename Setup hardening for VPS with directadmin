@@ -1,0 +1,58 @@
+### Setup hardening for VPS with directadmin
+
+As a part of hardening I have also installed the Firewall and Malware scanner.
+
+===
+
+Description:
+Here are the details
+
+1. CSF is installed and configured in the server.
+   [root@vps255472 custombuild]# csf -v
+   
+         csf: v13.05 (DirectAdmin)
+
+2. I've installed PRM which monitors your server for processes that use extensive server resources for prolonged periods of time. These processes are logged and killed, preventing high loads and potential server crashes. On a normal system we generally leave this disabled unless needed for troubleshooting or when the server is suffering unexplained high loads.
+   [root@vps255472 ~]# prm -v
+   Process Resource Monitor (PRM) v1.1.4
+
+3. RKHunter has been installed to provide you with a comprehensive security analysis of your system. A report will be dispatched weekly to the root email address of the server. RKHunter should be used as a RootKit Checker only. We have done extensive testing on RKHunter and have configured only the most valid tests for your system.
+
+[root@vps255472 custombuild]# rkhunter -V
+Rootkit Hunter 1.4.6
+
+4. SSH service has been secured.
+
+5. Mod_Security has been installed to provide an extra layer of security for Apache Web Server. It is an intrusion detection and prevention system for web applications and basically acts like a web application firewall. This apache module may cause some scripts to malfunction.
+
+6. Malware scanner has been installed
+
+[root@vps255472 custombuild]# maldet -V
+Linux Malware Detect v1.6.4
+
+7. Fail2ban is a software that scans log files for brute force login attempts in real-time and bans the attackers with firewalld or iptables.
+
+[root@vps255472 custombuild]# fail2ban-server -V
+Fail2Ban v0.9.7
+
+8. I've removed all unused software from the server. This will significantly decrease the chance of server compromise due to software exploits. All unnecessary services have also been removed, and obsolete ports disabled.
+
+9. Apache Web Server has been secured and optimized.
+
+10. MySQL server has been optimized.
+
+11. MySQL was allowed for 127.0.0.1 only. This will protect from direct MySQL hacks attempts
+
+Will change the settings.
+
+12. Mail server should be configured to allow users to send no more than 75 messages daily
+
+Will setup and let you know.
+
+13. Whole server and domains were should be scanned with different security scanners: * maldet, * clamav, * rkhunter
+
+Rkhunter scan already complete
+
+14. Disabled the ftp port.
+
+15. SFTP has been installed. You can login through individual account by their user. If you are using FileZilla use " sftp://167.114.153.108 " under Host with port 23
