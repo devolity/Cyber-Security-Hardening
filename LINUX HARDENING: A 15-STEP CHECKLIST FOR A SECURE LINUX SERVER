@@ -1,0 +1,176 @@
+### LINUX HARDENING: A 15-STEP CHECKLIST FOR A SECURE LINUX SERVER
+
+It's easy to assume that your server is already secure. Don't fall for this assumption and open yourself up to a (potentially costly) security breach. Hardening your Linux server can be done in 15 steps. Read more in the article below, which was originally published here on NetworkWorld.
+
+Most people assume that rname]
+
+The list can go on and on, but these should be enough to start with. For example, some companies add banners to deter attackers and discourage them from continuing further. I encourage you to check the manual of the SSH to understand all the configurations in this file, or you can visit this site for more information.
+
+Here are some additional options that you need to make sure exist in the “sshd_config” file:
+
+Protocol2
+IgnoreRhosts to yes
+HostbasedAuthentication no
+PermitEmptyPasswords no
+X11Forwarding no
+MaxAuthTries 5
+Ciphers aes128-ctr,aes192-ctr,aes256-ctr
+ClientAliveInterval 900
+ClientAliveCountMax 0
+UsePAM yes
+Finally, set the permissions on the sshd_config file so that only root users can change its contents:
+
+#chown root:root /etc/ssh/sshd_config
+#chmod 600 /etc/ssh/sshd_config
+
+11. Enable SELinux
+Security Enhanced Linux is a Kernel security mechanism for supporting access control security policy. The SELinux has three configuration modes:
+
+Disabled: Turned-off
+Permissive: Prints warnings
+Enforcing: Policy is enforced
+Using a text editor, open the config file:
+
+#nano /etc/selinux/config
+
+And make sure that the policy is enforced:
+
+SELINUX=enforcing
+
+
+12. Network parameters
+Securing your Linux host network activities is an essential task. Don’t always assume that your firewall will take care of everything. Here are some important features to consider for securing your host network:
+
+Disable the IP Forwarding by setting the net.ipv4.ip_forward parameter to 0 in
+“/etc/sysctl.conf”
+
+Disable the Send Packet Redirects by setting the net.ipv4.conf.all.send_redirects and net.ipv4.conf.default.send_redirects parameters to 0 in
+“/etc/sysctl.conf”
+
+Disable ICMP Redirect Acceptance by setting the net.ipv4.conf.all.accept_redirects and net.ipv4.conf.default.accept_redirects parameters to 0 in
+“/etc/sysctl.conf”
+
+Enable Bad Error Message Protection by setting the net.ipv4.icmp_ignore_bogus_error_responses parameter to 1 in
+“/etc/sysctl.conf”
+
+I strongly recommend using the Linux Firewall by applying the iptable rules and filtering all the incoming, outgoing and forwarded packets. Configuring your iptables rules will take some time, but it’s worth the pain.
+
+13. Password policies
+People often reuse their passwords, which is a bad security practice. The old passwords are stored in the file “/etc/security/opasswd”. We are going to use the PAM module to manage the security policies of the Linux host. Under a debian distro, open the file “/etc/pam.d/common-password” using a text editor and add the following two lines:
+
+auth sufficient pam_unix.so likeauth nullok
+password	sufficient pam_unix.so remember=4
+
+(Will not allow users to reuse the last four passwords.)
+
+Another password policy that should be forced is strong passwords. The PAM module offers a pam_cracklib that protects your server from dictionary and brute-force attacks. To accomplish this task, open the file /etc/pam.d/system-auth using any text editor and add the following line:
+
+/lib/security/$ISA/pam_cracklib.so retry=3 minlen=8 lcredit=-1 ucredit=-2 dcredit=-2 ocredit=-1
+
+Linux will hash the password to avoid saving it in cleartext so, you need to make sure to define a secure password hashing algorithm SHA512.
+
+Another interesting functionality is to lock the account after five failed attempts. To make this happen, you need to open the file “/etc/pam.d/password-auth” and add the following lines:
+
+auth required pam_env.so
+auth required pam_faillock.so preauth audit silent deny=5 unlock_time=604800
+auth [success=1 default=bad] pam_unix.so
+auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=604800
+auth sufficient pam_faillock.so authsucc audit deny=5 unlock_time=604800
+auth required pam_deny.so
+
+We’re not done yet; one additional step is needed. Open the file “/etc/pam.d/system-auth” and make sure you have the following lines added:
+
+auth required pam_env.so
+auth required pam_faillock.so preauth audit silent deny=5 unlock_time=604800
+auth [success=1 default=bad] pam_unix.so
+auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=604800
+auth sufficient pam_faillock.so authsucc audit deny=5 unlock_time=604800
+auth required pam_deny.so
+
+After five failed attempts, only an administrator can unlock the account by using the following command:
+
+# /usr/sbin/faillock --user <userlocked> --reset
+
+Also, another good practice is to set the password to expire after 90 days, to accomplish this task you need to:
+
+Set the PASS_MAX_DAYS parameter to 90 in “/etc/login.defs”
+Change the active user by executing the following command :
+#chage --maxdays 90 <user>
+
+The next tip for enhancing the passwords policies is to restrict access to the su command by setting the pam_wheel.so parameters in “/etc/pam.d/su”:
+
+auth required pam_wheel.so use_uid
+
+The final tip for passwords policy is to disable the system accounts for non-root users by using the following bash script:
+
+#!/bin/bash
+for user in `awk -F: '($3 < 500) {print $1 }' /etc/passwd`; do
+if [ $user != "root" ]
+then
+/usr/sbin/usermod -L $user
+if [ $user != "sync" ] && [ $user != "shutdown" ] && [ $user != "halt" ]
+then /usr/sbin/usermod -s /sbin/nologin $user
+fi
+fi
+done
+
+14. Permissions and verifications
+Prepare yourself mentally because this is going to be a long list. But, permissions is one of the most important and critical tasks to achieve the security goal on a Linux host.
+
+Set User/Group Owner and Permission on “/etc/anacrontab”, “/etc/crontab” and “/etc/cron.*” by executing the following commands:
+
+#chown root:root /etc/anacrontab
+#chmod og-rwx /etc/anacrontab
+#chown root:root /etc/crontab
+#chmod og-rwx /etc/crontab
+#chown root:root /etc/cron.hourly
+#chmod og-rwx /etc/cron.hourly
+#chown root:root /etc/cron.daily
+#chmod og-rwx /etc/cron.daily
+#chown root:root /etc/cron.weekly
+#chmod og-rwx /etc/cron.weekly
+#chown root:root /etc/cron.monthly
+#chmod og-rwx /etc/cron.monthly
+#chown root:root /etc/cron.d
+#chmod og-rwx /etc/cron.d
+
+Set the right and permissions on “/var/spool/cron” for “root crontab”
+
+#chown root:root <crontabfile>
+#chmod og-rwx <crontabfile>
+
+Set User/Group Owner and Permission on “passwd” file
+
+#chmod 644 /etc/passwd
+#chown root:root /etc/passwd
+
+Set User/Group Owner and Permission on the “group” file
+
+#chmod 644 /etc/group
+#chown root:root /etc/group
+
+Set User/Group Owner and Permission on the “shadow” file
+
+#chmod 600 /etc/shadow
+#chown root:root /etc/shadow
+
+Set User/Group Owner and Permission on the “gshadow” file
+
+#chmod 600 /etc/gshadow
+#chown root:root /etc/gshadow
+
+15. Additional process hardening
+For this last item in the list, I’m including some additional tips that should be considered when hardening a Linux host.
+
+First, Restrict Core Dumps by:
+
+Adding hard core 0 to the “/etc/security/limits.conf” file
+Adding fs.suid_dumpable = 0 to the “/etc/sysctl.conf” file
+Second, configure Exec Shield by:
+
+Adding kernel.exec-shield = 1 to the “/etc/sysctl.conf” file
+Third, enable randomized Virtual Memory Region Placement by:
+
+Adding kernel.randomize_va_space = 2 to the “/etc/sysctl.conf” file
+Final thoughts
+In this short post, we covered many important configurations for Linux security. But, we’ve just scratched the surface of Linux Hardening—there are a lot of complex, nitty-gritty configurations. To learn more about how to harden your Linux servers for better security, check out these Pluralsight courses.
