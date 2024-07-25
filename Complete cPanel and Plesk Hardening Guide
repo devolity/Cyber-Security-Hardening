@@ -1,0 +1,271 @@
+### Complete cPanel and Plesk Hardening Guide
+
+"dca391e7-32d5-43b1-bb92-023283ba4e7c" class="">“mod_evasive” is an evasive maneuvers module for Apache to provide evasive action in the event of an HTTP DoS or DDoS attack or brute force attack. I have installed it in several servers and seems very efficient to prevent normal DDoS attacks. Please follow the below steps to install it in your server.
+Go to “/opt” directory and download the latest the “mod_evasive” source and extract it.
+
+cd /opt
+wget http://www.zdziarski.com/blog/wp-content/uploads/2010/02/mod_evasive_1.10.1.tar.gz
+tar -xvf mod_evasive_1.10.1.tar.gz
+cd mod_evasive
+We are going to compile the “mod_evasive” module with Apache with “apxs” tool. “apxs” is a tool came with “httpd-devel” package. First step is to check if you have the “httpd-devel” package.
+
+rpm -qa | grep httpd-devel
+You probably won’t get any result and that means you don’t have that package. If you don’t have, please follow the below steps to install it in your server.
+
+yum install httpd-devel
+After installing httpd-devel, run the below command to compile the “mod_evasive”with Apache. ( In case of cPanel, the bin path of apxs is – “/usr/local/apache/bin/apxs” and you may have to use the full path )
+
+apxs -cia mod_evasive20.c
+Add the following rules at the end of /etc/httpd/conf/httpd.conf:
+
+DOSHashTableSize 3097
+DOSPageCount 6
+DOSSiteCount 100
+DOSPageInterval 2
+DOSSiteInterval 2
+DOSBlockingPeriod 600
+
+Now restart Apache to update the changes.
+
+/etc/init.d/httpd restart
+It will install and create all necessary configurations for “mod_evasive”.
+
+7) Setup Mod_Security
+
+ModSecurity supplies an array of request filtering and other security features for Apache. You can either install it using EasyApache. If you are concerned about the downtime you can follow the manual steps given below )
+
+Enable Atomic repo.
+
+wget -q -O - http://www.atomicorp.com/installers/atomic | sh
+Install “ModSecurity”.
+
+yum install mod_security
+If you want to setup rules. You can download it from here >> https://www.owasp.org/index.php/Category:OWASP_ModSecurity_Core_Rule_Set_Project
+
+8) Scan your system with RootKit Hunter.
+
+This tool scans for rootkits, backdoors and local exploits by running tests like:
+
+– MD5 hash compare– Look for default files used by rootkits– Wrong file permissions for binaries– Look for suspected strings in LKM and KLD modules– Look for hidden files– Optional scan within plaintext and binary files
+
+Please follow the below steps to scan your system using RootKit Hunter.
+
+1) Go to “/opt” and download the latest RootKit Hunter from here >> http://sourceforge.net/projects/rkhunter/
+
+cd /opt
+wget http://nchc.dl.sourceforge.net/project/rkhunter/rkhunter/1.4.0/rkhunter-1.4.0.tar.gz
+tar -xvf rkhunter-1.4.0.tar.gz
+cd rkhunter-1.4.0
+( Please note that, the above URL won’t work always. So you need to find the correct package and download link from here >> http://sourceforge.net/projects/rkhunter/ )
+
+Install the RootKit Hunter by running the installer.sh script with “–install” switch.
+
+./installer.sh --install
+Run the below command to update RootKit Hunter.
+
+rkhunter --update
+Run the below command to perform the scan. ( Where -c is to check the local system and –sk is to skip key press )
+
+rkhunter -c -sk
+That’s it. It will scan the local system and will give you a detailed out put.
+
+( Let us know if you find any issues and we will be right here for your help. )
+
+9) Scan your system using maldet
+
+maldet – It is an efficient Malware Detect virus scanner for Linux. Please follow the below steps to install it in your system.
+
+Go to “/opt” and download the latest “maldet” source and untar it.
+
+cd /opt
+wget http://www.rfxn.com/downloads/maldetect-current.tar.gz
+tar -xvf maldetect-current.tar.gz
+cd maldetect-1.4.2
+Install the maldet using the “install.sh” shell script.
+
+./install.sh
+Now open a new screen session and scan the whole system by running the below command.
+
+maldet -a /
+( Please note that, this will take hours to complete depending on the disk usage in your system and that is the reason why we are running it in a screen session. )
+
+You can detach and enter to screen session any time and check the status frequently.
+
+If the scan complete. You will get a result as shown below.
+
+Linux Malware Detect v1.4.2
+(C) 2002-2013, R-fx Networks <proj@r-fx.org>
+(C) 2013, Ryan MacDonald <ryan@r-fx.org>
+inotifywait (C) 2007, Rohan McGovern <rohan@mcgovern.id.au>
+This program may be freely redistributed under the terms of the GNU GPL v2
+
+maldet(20920): {scan} signatures loaded: 11272 (9404 MD5 / 1868 HEX)
+maldet(20920): {scan} building file list for /, this might take awhile...
+/usr/bin/find: /proc/20974/task/20974/fdinfo/4: No such file or directory
+/usr/bin/find: /proc/20974/fdinfo/4: No such file or directory
+maldet(20920): {scan} file list completed, found 271615 files...
+maldet(20920): {scan} 271615/271615 files scanned: 12 hits 0 cleaned
+maldet(20920): {scan} scan completed on /: files 271615, malware hits 12, cleaned hits 0
+maldet(20920): {scan} scan report saved, to view run: maldet --report 051913-1142.20920
+maldet(20920): {scan} quarantine is disabled! set quar_hits=1 in conf.maldet or to quarantine results run: maldet -q 051913-1142.20920
+From the result you will get the scan report ID. In this case, the scan report ID is – 051913-1142.20920. Run the below command to view the detailed report.
+
+maldet --report 051913-1142.20920
+You can put the infected files to quarantine by running the below command.
+
+maldet -q 051913-1142.20920
+( Please note that, these files will be removed from your system within 14 days. )
+
+You have completed the maldet scan. Your system is now malware free.
+
+10) Scan your system using Clam AntiVirus.
+
+ClamAV is an open source (GPL) antivirus engine designed for detecting Trojans, viruses, malware and other malicious threats. It is the de facto standard for mail gateway scanning. It provides a high performance mutli-threaded scanning daemon, command line utilities for on demand file scanning, and an intelligent tool for automatic signature updates.
+
+Please follow the below steps to install and configure ClamAV in your system.
+
+Install the Atomic repository in your system.
+
+wget -q -O - http://www.atomicorp.com/installers/atomic | sh
+Install ClamAV using yum.
+
+yum install clamd
+It will install clamd, clamav and clamav-db in your system. Run the below command to update the virus definitions.
+
+freshclam
+Start the ClamAV.
+
+/etc/init.d/clamd start
+Now open a new screen session and scan the whole system by running the below command.
+
+clamscan -ril /opt/clamscan.log /
+( Please note that, this will take hours to complete depending on the disk usage in your system and that is the reason why we are running it in a screen session. )
+
+You can detach and enter to screen session any time and check the status frequently.
+
+You will get the scan result at the end and the command will only list the infected files. You can find the files in “/opt/clamscan.log”. ( grep the word FOUND ) You may either manually remove or correct these files or else run the below command that will permanently remove all infected files in your system ( Make sure to run in screen session )
+
+clamscan -ril /opt/clamscan.log --remove=yes /
+You have just removed the virus and malicious codes from your system.
+
+11) Setup cron job to run Clam AntiVirus weekly.
+
+Setting up ClamAV cron is a easy task and a user called “Stefano Stagnaro” uploaded a grate cron script called “clamav-cron” in Google codes that will update ClamAV, will scan the system and will send a brief report via e-mail. Please follow the below steps to set this.
+
+Go to “/opt” ,download the “clamav-cron” and give execute permission.
+
+cd /opt
+wget http://clamav-cron.googlecode.com/files/clamav-cron-0.6 -O /usr/local/bin/clamav-cron
+chmod 755 /usr/local/bin/clamav-cron
+Open the “/usr/local/bin/clamav-cron” and edit user informations.
+
+vim /usr/local/bin/clamav-cron
+
+---
+
+# Notification e-mail recipient:
+CV_MAILTO="your email ID here"
+
+# Notification e-mail secondary recipients:
+CV_MAILTO_CC="cc mails here"
+
+# Notification e-mail subject:
+CV_SUBJECT="Desired Subject line here"
+
+---
+Set a cron job. I’m going to set a cron job to run this task every Saturday 11.45PM.
+
+crontab -e
+Add the lines at the end.
+
+45 23 * * 6 /usr/local/bin/clamav-cron /
+Restart cron service.
+
+/etc/init.d/crond restart
+You have setup the ClamAV cron script.
+
+12) Disable Apache header information.
+
+It is not good to expose your serve information to the public. Please follow the below steps to disable Apache header information.
+
+Edit your mail Apache configuration file and add you can see the below lines somewhere in that file.
+
+vim /etc/httpd/conf/httpd.conf
+
+---
+ServerSignature On
+
+ServerTokens OS
+---
+Change it to as shown below.
+
+ServerSignature off
+
+ServerTokens Prod
+Also add the below entries somewhere in it to disable Apache Last Modified header.
+
+<filesMatch ".*$">
+Header unset Last-Modified
+Restart Apache.
+
+/etc/init.d/httpd restart
+You have just disabled Apache header information.
+
+13) Hide PHP Version information.
+
+Like Apache, it is not good to expose your PHP information to the public. Please follow the below steps to hide it from the public.
+
+Find your main PHP configuration file.
+
+php -i | grep php.ini
+You will get the location of your mail php.ini file from this. Edit the file and you can see the below lines.
+
+vim /usr/local/lib/php.ini
+---
+expose_php = on
+---
+Edit it as follows.
+
+expose_php = off
+Restart Apache
+
+/etc/init.d/httpd restart
+You have just disabled PHP version information.
+
+14) Disable FTP. Use SFTP instead.
+
+FTP is always the favourite back-door of hacker and there are a million ways to hack an FTP account. May be you are not that familiar with SSH and disabling FTP may put you in trouble. I have an alternative option. If you are some one that want the simplicity of FTP with the security features of SSH, you can use SFTP. It is not a big deal. Any users that have SSH access to your system can use SFTP. WinSCP is a SFTP client for Windows and you can find it here >> http://winscp.net/eng/index.php
+
+Let’s disable the 21 port by setting up a firewall rule as shown below.
+
+iptables -A INPUT -p tcp --dport 21 -j REJECT
+That’s all you have to do.
+
+15) Disable shell access for unknown users.
+
+Run the below command to list all users that have shell access to your system.
+
+grep bin/bash$ /etc/passwd
+
+root:x:0:0:root:/root:/bin/bash
+mysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/bash
+test2:x:10002:10002::/home/test2:/bin/bash
+hduser:x:10003:10003::/home/hduser:/bin/bash
+admin:x:10004:10004::/home/admin:/bin/bash
+boot:x:0:0:root:/root:/bin/bash
+sshusr:x:10006:10006::/home/sshusr:/bin/bash
+u1:x:10007:10007::/home/u1:/bin/bash
+If you find any unknown users in this list, change the shell of that user to /sbin/nologin by running the below command.
+
+Here I’m going to change the shell of “u1″ user to /sbin/nologin”.
+
+chsh u1
+
+Changing shell for u1.
+New shell [/bin/bash]: /sbin/nologin
+Shell changed.
+This way you can change the shell of a user.
+
+So we have completed the cPanel and Plesk hardening and your server is hard as rock now.
+
+Please do let us know if you find any difficulty following any steps and also let us know if this post was help full to you.
